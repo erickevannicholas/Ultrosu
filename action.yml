@@ -1,0 +1,37 @@
+name: Ultroid Workflow
+
+on:
+    push:
+    workflow_dispatch:
+    
+env:
+ GitHubMail: "error@notavailable.live"
+ GitHubName: "ProgrammingError"
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+       - name: Checkout
+         uses: actions/checkout@main
+
+       - name: initialization
+         continue-on-error: true
+         run: |
+           git config --global user.name ${GitHubName}
+           git config --global user.email ${GitHubMail}
+           git config --global credential.helper store
+           echo "https://${GitHubName}:${{ secrets.GH_TOKEN }}@github.com" > ~/.git-credentials
+       - name: cloning repo
+         continue-on-error: true
+         run: |
+           git clone https://${GitHubName}:${{ secrets.GH_TOKEN }}@github.com/${{ secrets.CREDS }} ultroid
+       - name: Running Ultroid
+         timeout-minutes: 350
+         continue-on-error: true
+         run: |
+           cd ultroid
+           wget https://raw.githubusercontent.com/TeamUltroid/Ultroid/pytgcalls/Dockerfile
+           printf "\nCMD bash resources/startup/startup.sh" >> Dockerfile
+           docker build . --rm --force-rm --compress --no-cache=true --pull --file Dockerfile -t ultroid
+           docker run --privileged --env-file .env --rm -i ultroid
